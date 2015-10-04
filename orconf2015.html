@@ -1,47 +1,12 @@
-<!doctype html>
-<html lang="en">
+---
+layout: presentation
+title: ORCONF 2015 
+description: OCaml and FPGAs
+author: Andy Ray
+---
 
-	<head>
-		<meta charset="utf-8">
 
-		<title>ORCONF 2015 HardCaml, RISCV, ZINC</title>
-
-		<meta name="description" content="OCaml and FPGAs">
-		<meta name="author" content="Andy Ray">
-
-		<meta name="apple-mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
-
-		<link rel="stylesheet" href="css/reveal.css">
-		<link rel="stylesheet" href="css/theme/solarized.css" id="theme">
-
-		<!-- Code syntax highlighting -->
-		<link rel="stylesheet" href="lib/css/zenburn.css">
-
-		<!-- Printing and PDF exports -->
-		<script>
-			var link = document.createElement( 'link' );
-			link.rel = 'stylesheet';
-			link.type = 'text/css';
-			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
-			document.getElementsByTagName( 'head' )[0].appendChild( link );
-		</script>
-
-		<!--[if lt IE 9]>
-		<script src="lib/js/html5shiv.js"></script>
-		<![endif]-->
-	</head>
-
-	<body>
-
-		<div class="reveal">
-
-			<!-- Any section element inside of this container is displayed as a slide -->
-			<div class="slides">
-
-				<section data-markdown><script type="text/template">
+<section data-markdown><script type="text/template">
 # OCaml and FPGAs
 
 ### ORCONF 2015
@@ -51,17 +16,17 @@ Writing hardware in OCaml.
 Running OCaml in hardware.
 
 andy.ray@ujamjar.com
-        </script></section>
+</script></section>
 
-				<section data-markdown><script type="text/template">
+<section data-markdown><script type="text/template">
 # Topics
 
 * __HardCaml__ RTL level hardware design as an embedded DSL in Ocaml
 * __HardCaml-RISCV__ a simple pipelined RISC-V cpu written in HardCaml
 * __HardCaml-ZINC__ extending the RISC-V core to implement the Ocaml ZINC bytecode instruction set
-        </script></section>
+</script></section>
 
-				<section data-markdown><script type="text/template">
+<section data-markdown><script type="text/template">
 # HardCaml
 
 * Structural RTL design.  
@@ -86,10 +51,10 @@ let fir_filter taps enable x =
   tree 2 (reduce (+:) x)
 ```
 
-        </script></section>
+</script></section>
 
-        <section>
-          <section data-markdown><script type="text/template">
+<section>
+  <section data-markdown><script type="text/template">
 # Layered DSLs
 
 * Build libraries to raise level of abstraction
@@ -117,9 +82,9 @@ let fir_filter taps enable x =
               maddr $== aligned_addr i.evict_addr;
   ....
 ```
-          </script></section>
+  </script></section>
 
-          <section data-markdown><script type="text/template">
+  <section data-markdown><script type="text/template">
 * Recipes (monad reader issue 7, A Recipe for controlling Lego using Lava)
 ```
   let mult a_in b_in = 
@@ -136,8 +101,8 @@ let fir_filter taps enable x =
       acc <-- SVar.read state.acc;
       return acc
 ```
-          </script></section>
-          <section data-markdown><script type="text/template">
+  </script></section>
+  <section data-markdown><script type="text/template">
 * Predicting the future...
 * HardCaml-HLS
  * Imperative style DSL
@@ -146,10 +111,10 @@ let fir_filter taps enable x =
  * Generate RTL
 * HardCaml-GAA
  * Guarded Atomic Action DSL
-          </script></section>
-        </section>
+  </script></section>
+</section>
 
-        <section data-markdown><script type="text/template">
+<section data-markdown><script type="text/template">
 # Generate RTL
 
 ```
@@ -157,9 +122,10 @@ let circuit = Circuit.make "toplevel" [ list_of_outputs ]
 let () = Rtl.Verilog.write print_string circuit
 let () = Rtl.Vhdl.write print_string circuit
 ```
-        </script></section>
-        <section>
-          <section data-markdown><script type="text/template">
+</script></section>
+
+<section>
+  <section data-markdown><script type="text/template">
 # Simulation
 
 * Cycle accurate simulation in OCaml
@@ -176,8 +142,8 @@ let testbench () =
   S.cycle sim;
   printf "%i\n" (B.to_int !q);
 ```
-          </script></section>
-          <section data-markdown><script type="text/template">
+  </script></section>
+  <section data-markdown><script type="text/template">
 # HardCaml-LLVMSIM
 
 * Same API 
@@ -187,8 +153,8 @@ let testbench () =
 module Sim = HardCamlLlvmsim.Sim.Make(B)
 let () = testbench ()
 ```
-          </script></section>
-          <section data-markdown><script type="text/template">
+  </script></section>
+  <section data-markdown><script type="text/template">
 # HardCaml-VPI
 
 * Simulation performed by Icarus Verilog
@@ -200,11 +166,11 @@ let () = testbench ()
 module Sim = HardCaml.Cosim.Make(B)
 let () = testbench ()
 ```
-          </script></section>
-        </section>
+  </script></section>
+</section>
 
-        <section>
-          <section data-markdown><script type="text/template">
+<section>
+  <section data-markdown><script type="text/template">
 # Shallow or Deep 
 
 * Combinatorial API is functorized
@@ -216,9 +182,9 @@ let () = testbench ()
   * Hardware represented as an AST.  
   * Required for simulation or RTL generation
 * Only deep embedding for sequential logic
-          </script></section>
+  </script></section>
 
-          <section data-markdown><script type="text/template">
+  <section data-markdown><script type="text/template">
 # Shallow
 
 ```
@@ -232,9 +198,9 @@ let () = testbench ()
 # reduce (+:) (List.map (consti 8) [1;2;3;10]);;
 - : HardCaml.Api.B.t = [0; 0; 0; 1; 0; 0; 0; 0]
 ```
-          </script></section>
+  </script></section>
 
-          <section data-markdown><script type="text/template">
+  <section data-markdown><script type="text/template">
 # Deep
 
 ```
@@ -270,9 +236,9 @@ HardCaml.Signal.Types.Signal_op
       "00001010")]},
  HardCaml.Signal.Types.Signal_add)
 ```
-          </script></section>
+  </script></section>
 
-          <section data-markdown><script type="text/template">
+  <section data-markdown><script type="text/template">
 # Xilinx LUTs
 
 * Same code, different functors, very different results.
@@ -303,42 +269,7 @@ HardCaml.Signal.Types.Signal_op
         ( .CI(gnd), .DI(_793), .S(_813), .O(_817[0:0]) );
 ...
 ```
-          </script></section>
+  </script></section>
 
-        </section>
-
-			</div>
-
-		</div>
-
-		<script src="lib/js/head.min.js"></script>
-		<script src="js/reveal.js"></script>
-
-		<script>
-
-			// Full list of configuration options available at:
-			// https://github.com/hakimel/reveal.js#configuration
-			Reveal.initialize({
-				controls: true,
-				progress: true,
-				history: true,
-				center: true,
-
-				transition: 'slide', // none/fade/slide/convex/concave/zoom
-
-				// Optional reveal.js plugins
-				dependencies: [
-					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
-					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
-					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
-					{ src: 'plugin/highlight/highlight.js', async: true, condition: function() { return !!document.querySelector( 'pre code' ); }, callback: function() { hljs.initHighlightingOnLoad(); } },
-					{ src: 'plugin/zoom-js/zoom.js', async: true },
-					{ src: 'plugin/notes/notes.js', async: true }
-				]
-			});
-
-		</script>
-
-	</body>
-</html>
+</section>
 
