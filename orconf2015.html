@@ -103,9 +103,9 @@ let complex_multiply a b = {
 let fir_filter taps enable x = 
   let f (p,v) tap = 
     let p = reg r_sync enable p in
-    p, (p *: tap)
+    p, (p *: tap)::v
   in
-  let x = List.fold_left f (x, zero (width x)) taps in
+  let x = snd @@ List.fold_left f (x, []) taps in
   tree 2 (reduce (+:) x)
 ```
   </script></section>
@@ -231,7 +231,7 @@ let () = Rtl.Vhdl.write print_string circuit
 ```
 module Sim = HardCaml.Cyclesim.Make(B)
 let testbench () = 
-  let sim = Sim.make circuit
+  let sim = Sim.make circuit in
   clr := B.vdd;
   S.cycle sim;
   clr := B.gnd;
@@ -265,14 +265,45 @@ module Sim = HardCaml.Cosim.Make(B)
 let () = testbench ()
 ```
   </script></section>
+
+  <section data-markdown><script type="text/template">
+# HardCaml-waveterm
+
+* Waveforms rendered in unicode
+* Interactive terminal version
+
+```
+┌Signals─┐┌Values──┐┌Waves─────────────────────────────────────────────────────┐
+│clock   ││        ││┌───┐   ┌───┐   ┌───┐   ┌───┐   ┌───┐   ┌───┐   ┌───┐   ┌─│
+│        ││        ││    └───┘   └───┘   └───┘   └───┘   └───┘   └───┘   └───┘ │
+│a       ││0       ││                ┌───────┐       ┌───────┐               ┌─│
+│        ││        ││────────────────┘       └───────┘       └───────────────┘ │
+│        ││        ││────────┬───────┬───────┬───────┬───────┬───────┬───────┬─│
+│b       ││-318    ││ -318   │-131   │387    │-33    │-69    │-5     │-463   │3│
+│        ││        ││────────┴───────┴───────┴───────┴───────┴───────┴───────┴─│
+│c       ││0       ││                ┌───────────────┐                       ┌─│
+│        ││        ││────────────────┘               └───────────────────────┘ │
+│        ││        ││────────────────┬───────┬───────┬───────┬───────┬───────┬─│
+│gamma-om││1       ││ 1              │9      │8      │4      │6      │5      │0│
+│        ││        ││────────────────┴───────┴───────┴───────┴───────┴───────┴─│
+│        ││        ││────────┬───────┬───────┬───────────────────────────────┬─│
+│beta    ││0       ││ 0      │2      │1      │0                              │2│
+│        ││        ││────────┴───────┴───────┴───────────────────────────────┴─│
+│delta   ││1       ││────────┐       ┌───────┐       ┌───────┐       ┌───────┐ │
+│        ││        ││        └───────┘       └───────┘       └───────┘       └─│
+│eye     ││0       ││        ┌───────┐                               ┌─────────│
+│        ││        ││────────┘       └───────────────────────────────┘         │
+└────────┘└────────┘└──────────────────────────────────────────────────────────┘
+```
+  </script></section>
+
 </section>
 
 <section>
   <section data-markdown><script type="text/template">
 # Shallow or Deep 
 
-* Combinatorial API is functorized
-* type representing _combinatorial hardware_ can be shallow or deep
+* Type representing _combinatorial hardware_ can be shallow or deep
 * Shallow
   * Hardware represented as values ie int list
   * Great for exploring combinatorial logic in REPL
@@ -377,13 +408,181 @@ HardCaml.Signal.Types.Signal_op
 
 <section data-markdown><script type="text/template">
 # HardCaml-RISCV
+
+Pretty basic RISC-V processor implemented in HardCaml
 </script></section>
+
+<section>
+
+  <section data-markdown><script type="text/template">
+# Status
+
+* RV32I only
+* Simple 5 stage pipeline
+* Targetted at FPGA technology
+* Instruction and data caches
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+# Near term Plans
+
+* RV64I
+* M extension
+* C extension
+* Extended pipeline (thinking 7 stage) with branch predictor
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+# Longer term plans
+
+* Virtual memory
+* Supervisor spec
+* Easily configurable instruction set
+  </script></section>
+
+</section>
+
+<section>
+
+  <section data-markdown><script type="text/template">
+# Instruction decoding - TRAP
+
+* RISC-V must trap on illegal instruction
+* How can we be confident of that with a hand written instruction decoder?
+* Enumeration (brute force) out of the question
+* Solution; SAT solver
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+# SAT
+
+* We have an implementation we want to test; h(i)
+* We need an implementation we can trust; t(i)
+* Now we need to ask a question.
+ * Are these things the same? h(i) = t(i)
+ * Are these things different? h(i) <> t(i)
+* We ask the 2nd question;
+ * SAT; they are different and we get a bit pattern that causes a problem
+ * UNSAT; they are not different!
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+# Trusted implementation
+
+* https://github.com/riscv/riscv-opcodes
+* Parse and convert into mask/match pairs
+ * mask - remove immediates, register specifiers
+ * match - check bits relevant to decode
+ * f(i,j) = (i & mask<sub>j</sub>) == match<sub>j</sub>
+* trap = !(f(i,0) | f(i,1) | ... | f(i,47))
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+```
+(* trusted implementation *)
+module Ref = struct
+  let insn = 
+    let x = List.map (fun x -> List.assoc x Riscv.RV32I.T.mask_match) Insn.V.list in
+    let open B in
+    let f (mask,mat) = (instr &: (consti32 32 mask)) ==: consti32 32 mat in
+    let insn = List.map f x in
+    let trap = ~: (reduce (|:) insn) in
+    B.concat (trap :: List.rev insn)
+end
+```
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+# HardCaml-bloop
+
+* https://www.coursera.org/course/vlsicad
+* PCN, Kmap, CNF, DNF, BDD, SAT
+* Convert HardCaml API to/from various formats
+* Linear expansion from gates to CNF
+
+```
+Fadi Aloul, Igor L. Markov, Karem Sakallah, “MINCE: A Static Global Variable-Ordering Heuristic for
+SAT Search and BDD Manipulation,” J. of Universal Computer Sci., vol. 10, no. 12 (2004), 1562-1596.
+```
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+# Putting it together
+
+HardCamlBloop Comb API
+
+```
+module B = HardCamlBloop.Gates.Comb
+```
+
+RTL version (look, more functors)
+
+```
+module Rtl = struct
+  module I = Decoder.Make_insn_decoder(Ifs)(B)
+  let insn = I.((decoder instr).insn) 
+end
+```
+
+Run the solver
+
+```
+let insn_ok = B.(Rtl.insn <>: Ref.insn)
+let ok = HardCamlBloop.Sat.(report @@ of_signal insn_ok)
+```
+  </script></section>
+</section>
 
 <!-- HardCaml-ZINC -->
 
 <section data-markdown><script type="text/template">
 # HardCaml-ZINC
+
+* Extends work on HardCaml-RISCV
+* Aims to run OCaml efficiently on FPGA
 </script></section>
 
+<section>
+
+  <section data-markdown><script type="text/template">
+# Interesting OCaml projects
+
+* MirageOS
+* OCaml-TLS
+* Multi-core
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+# MirageOS
+
+https://mirage.io/
+
+<blockquote>
+MirageOS is a library operating system that constructs unikernels for secure, high-performance network applications across a variety of cloud computing and mobile platforms. Code can be developed on a normal OS such as Linux or MacOS X, and then compiled into a fully-standalone, specialised unikernel that runs under the Xen hypervisor.
+</blockquote>
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+# OCaml-TLS
+
+https://github.com/mirleft/ocaml-tls
+
+<blockquote>
+Our main reasons for ocaml-tls are that OCaml is a modern functional language, which allows concise and declarative descriptions of the complex protocol logic and provides type safety and memory safety to help guard against programming errors. Its functional nature is extensively employed in our code: the core of the protocol is written in purely functional style, without any side effects.
+</blockquote>
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+# OCaml-multicore
+
+http://www.cl.cam.ac.uk/~sd601/papers/multicore_slides.pdf
+
+* Uses an interesting memory heirarchy that we _may_ be able to exploit to reduce hardware complexity
+ * Local minor heaps, stacks
+ * Global major heap
+* Bytecode only at the moment
+  </script></section>
+
+</section>
 
 
