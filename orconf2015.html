@@ -5,6 +5,7 @@ description: OCaml and FPGAs
 author: Andy Ray
 ---
 
+<!-- Intro -->
 
 <section data-markdown><script type="text/template">
 # OCaml and FPGAs
@@ -25,6 +26,8 @@ andy.ray@ujamjar.com
 * __HardCaml-RISCV__ a simple pipelined RISC-V cpu written in HardCaml
 * __HardCaml-ZINC__ extending the RISC-V core to implement the Ocaml ZINC bytecode instruction set
 </script></section>
+
+<!-- HardCaml -->
 
 <section data-markdown><script type="text/template">
 # HardCaml
@@ -58,8 +61,9 @@ let fir_filter taps enable x =
 # Layered DSLs
 
 * Build libraries to raise level of abstraction
-          </script></section>
-          <section data-markdown><script type="text/template">
+  </script></section>
+
+  <section data-markdown><script type="text/template">
 * Guarded DSL - VHDL processes, Verilog always blocks
 ```
   let () = compile [
@@ -246,7 +250,7 @@ HardCaml.Signal.Types.Signal_op
 ```
 # open HardCaml.Xilinx;;
 # module X = HardCaml.Comb.Make( XComb( XMake(Unisim)(Lut4) ) );;
-# open X
+# open X;;
 # reduce (+:) (List.map (consti 8) [1;2;3;10]);;
 - : X.t =
 HardCaml.Signal.Types.Signal_op
@@ -272,4 +276,18 @@ HardCaml.Signal.Types.Signal_op
   </script></section>
 
 </section>
+
+<!-- HardCaml-RISCV -->
+
+<section data-markdown><script type="text/template">
+# HardCaml-RISCV
+</script></section>
+
+<!-- HardCaml-ZINC -->
+
+<section data-markdown><script type="text/template">
+# HardCaml-ZINC
+</script></section>
+
+
 
