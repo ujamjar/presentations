@@ -29,21 +29,74 @@ andy.ray@ujamjar.com
 
 <!-- HardCaml -->
 
-<section data-markdown><script type="text/template">
+<section>
+  <section data-markdown><script type="text/template">
 # HardCaml
 
 * Structural RTL design.  
-* mux, reg, select, and, or, xor, add, multiply etc
-* Examples
+* RTL generation 
+* Simulation
+  </script></section>
 
+  <section>
+    <table>
+      <thead>
+        <tr>
+          <th>Class</th>
+          <th>Function</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="text-align:left">arithmetic</td>
+          <td style="text-align:left"><code>+: -: *: *+ negate</code></td>
+        </tr>
+        <tr>
+          <td style="text-align:left">logical</td>
+          <td style="text-align:left"><code>&amp: ^: ~: |:</code></td>
+        </tr>
+        <tr>
+          <td style="text-align:left">comparison</td>
+          <td style="text-align:left"><code>==: <>: &lt: &gt: &lt=: &gt=: &lt+ &gt+ &lt=+ &gt=+</code></td>
+        </tr>
+        <tr>
+          <td style="text-align:left">constants</td>
+          <td style="text-align:left"><code>const zero one ones</code></td>
+        </tr>
+        <tr>
+          <td style="text-align:left">mux</td>
+          <td style="text-align:left"><code>mux mux2 pmux pmux1h</code></td>
+        </tr>
+        <tr>
+          <td style="text-align:left">bits</td>
+          <td style="text-align:left"><code>bit select .[:] concat @: msb lsb</code></td>
+        </tr>
+        <tr>
+          <td style="text-align:left">misc</td>
+          <td style="text-align:left"><code>width wire -- &lt==</code></td>
+        </tr>
+        <tr>
+          <td style="text-align:left">sequential</td>
+          <td style="text-align:left"><code>reg pipeline memory ram_rbw ram_wbr</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section data-markdown><script type="text/template">
+* Derive new types
 ```
 type complex = { re : signal; im : signal }
+
 let complex_multiply a b = {
   re = (a.re *+ b.re) -: (a.im *+ b.im);
   im = (a.re *+ b.im) +: (a.im *+ b.re);
 }
 ```
+  </script></section>
 
+  <section data-markdown><script type="text/template">
+* Higher order functions
 ```
 let fir_filter taps enable x = 
   let f (p,v) tap = 
@@ -53,8 +106,9 @@ let fir_filter taps enable x =
   let x = List.fold_left f (x, zero (width x)) taps in
   tree 2 (reduce (+:) x)
 ```
+  </script></section>
 
-</script></section>
+</section>
 
 <section>
   <section data-markdown><script type="text/template">
@@ -260,7 +314,9 @@ HardCaml.Signal.Types.Signal_op
       ({HardCaml.Signal.Types.s_id = 607L; s_names = []; s_width = 1;
         s_deps =
         ...
-# HardCaml.Rtl.Verilog.write print_string @@ HardCaml.Circuit.make "xadd" [ output "q" (reduce (+:) (List.map (consti 8) [1;2;3;10])) ];;
+# HardCaml.Rtl.Verilog.write print_string @@ 
+    HardCaml.Circuit.make "xadd" 
+    [ output "q" (reduce (+:) (List.map (consti 8) [1;2;3;10])) ];;
 ...
     assign _810 = _809[0:0];
     LUT2
