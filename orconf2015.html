@@ -299,9 +299,18 @@ let () = testbench ()
 
 </section>
 
+<section data-markdown><script type="text/template">
+# Javascript
+
+* OCaml has an excellent compiler to javascript; [js_of_ocaml](https://github.com/ocsigen/js_of_ocaml)
+* Therefore, HardCaml can be compiled to javascript too.
+* HardCaml web apps can configure, simulate and generate ip cores in the browser.  No server side magic needed.
+* See also the [IOCamlJS](https://github.com/andrewray/iocamljs) based HardCaml [documentation](http://www.ujamjar.com/hardcaml)
+</script></section>
+
 <section>
   <section data-markdown><script type="text/template">
-# Shallow or Deep 
+# Some details
 
 * Type representing _combinatorial hardware_ can be shallow or deep
 * Shallow
@@ -709,11 +718,7 @@ Native code
 <section>
 
   <section data-markdown><script type="text/template">
-# The elephant in the room
-  </script></section>
-
-  <section data-markdown><script type="text/template">
-# Why not native code
+# Why not native code?
 
 * Dynamic loading
 * Compiler-libs
@@ -730,21 +735,40 @@ Native code
 
 </section>
 
+<section data-markdown><script type="text/template">
+# License and packaging
+
+* License?  BSD 
+* Code is released using [OPAM](https://opam.ocaml.org)
+* When will it be ready?  When its available in OPAM.
+* I want it now!
+
+```
+$ opam pin add hardcaml-riscv https://github.com/ujamjar/hardcaml-riscv
+$ opam install hardcaml-riscv
+```
+</script></section>
+
 <section>
 
   <section data-markdown><script type="text/template">
 # Thanks! Questions?
 
-| Links |
-|-|
-| http://www.ujamjar.com/presentations/orconf2015.html |
-| https://github.com/ujamjar/hardcaml |
-| https://github.com/ujamjar/hardcaml-riscv |
-| https://github.com/ujamjar/hardcaml-zinc |
-| https://github.com/ujamjar/hardcaml-bloop |
-| https://github.com/ujamjar/hardcaml-waveterm |
-| https://github.com/ujamjar/hardcaml-llvmsim |
-| https://github.com/ujamjar/hardcaml-vpi |
+http://www.ujamjar.com/presentations/orconf2015.html
+
+https://github.com/ujamjar/hardcaml
+
+https://github.com/ujamjar/hardcaml-riscv
+
+https://github.com/ujamjar/hardcaml-zinc
+
+https://github.com/ujamjar/hardcaml-bloop
+
+https://github.com/ujamjar/hardcaml-waveterm
+
+https://github.com/ujamjar/hardcaml-llvmsim
+
+https://github.com/ujamjar/hardcaml-vpi
 
   </script></section>
 
