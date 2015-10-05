@@ -578,11 +578,175 @@ Our main reasons for ocaml-tls are that OCaml is a modern functional language, w
 http://www.cl.cam.ac.uk/~sd601/papers/multicore_slides.pdf
 
 * Uses an interesting memory heirarchy that we _may_ be able to exploit to reduce hardware complexity
- * Local minor heaps, stacks
- * Global major heap
+  * Local minor heaps, stacks
+  * Global major heap
 * Bytecode only at the moment
   </script></section>
 
 </section>
 
+<section>
+
+  <section data-markdown><script type="text/template">
+# OCaml compiler
+
+* Two types of backend target
+  * Byte code
+  * Native code 
+    * x86, arm, powerpc, sparc
+    * risc-v ...
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+# Byte code
+
+| 31..8 | 7..0 |
+|:-|:-|
+| 000...000 | bytecode |
+
+* Word code?
+* Interleaved with 32 bit arguments
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+# ZINC stack machine
+
+* Stack based architecture with a few registers (sp, accu, pc, extra_args etc)
+
+```
+loop:
+  switch (program[pc++]) {
+  case PUSH: ... goto loop;
+  case POP: ... goto loop;
+  }
+```
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+# Performance
+
+* Byte code around 10x slower than native code.  Why?
+
+```
+valgrind --tool=cachegrind --branch-sim=yes ./testbench_rv32.{byte,native}
+```
+
+Byte code
+
+```
+==30498== Branches: 149,126,010 ( 58,921,015 cond + 90,204,995 ind)
+==30498== Mispredicts: 88,396,096 ( 1,427,839 cond + 86,968,257 ind)
+==30498== Mispred rate: 59.2% ( 2.4% + 96.4% )
+```
+
+Native code
+
+```
+==30504== Branches: 32,255,824 (30,301,629 cond + 1,954,195 ind)
+==30504== Mispredicts: 1,316,445 ( 998,148 cond + 318,297 ind)
+==30504== Mispred rate: 4.0% ( 3.2% + 16.2% )
+```
+  </script></section>
+
+</section>
+
+<section>
+
+  <section data-markdown><script type="text/template">
+# Instruction set extension
+
+* Conceptually
+
+| 31..24 | 23..6 | 6..0 |
+|:-|:-|:-|
+| bytecode | 000...000 | opcode |
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+* Decoded as part of the RISC-V instruction set
+* Basic implementation; The bytecode is an immediate and the risc-v instructions causes a jump to 'base + bytecode<<n'
+* Indexes into a tightly coupled memory (or ROM) that implements the ocaml bytecode instructions.
+* Only the bytecode instructions in Icache, could effectively use a branch predictor.
+* Sort of like microcode – but these instructions have real addresses so we can still take precise exceptions.
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+# Reality
+
+* Considering branch/bound style logical address spaces
+* Set up area of memory where byte code instructions reside
+* Translated as loaded from icache
+
+# Otherwise
+
+* Rewrite in ocaml compiler
+* Rewrite as loaded by runtime
+* Rewrite dynamically as executed like a jit
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+# More extensions
+
+* Tried to solve the interpreter overhead problem
+* Other extensions possible
+  * `add.zinc rd, rs1, rs2`
+  * does GC bit masking in hardware.  Requires minor alterations to ALU.
+  * Used in the microcode implementation of bytecode instruction.
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+# More extensions
+
+* Add new architectural state - top of stack
+  * `add.zinc`
+  * No operands - reads top of stack and accu implicitly, writes accu
+  * No need to call into microcode - just a single cycle instruction
+  * Other similar stack accessing ops
+  </script></section>
+
+</section>
+
+<section>
+
+  <section data-markdown><script type="text/template">
+# The elephant in the room
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+# Why not native code
+
+* Dynamic loading
+* Compiler-libs
+* REPL
+* Bytecode part of OCaml compiler simpler than native code
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+# How about native code
+
+* Can reuse some of the instruction set extensions mentioned
+* Maybe there's a fast FPGA style architecture waiting to be found
+  </script></section>
+
+</section>
+
+<section>
+
+  <section data-markdown><script type="text/template">
+# Thanks! Questions?
+
+| Links |
+|-|
+| http://www.ujamjar.com/presentations/orconf2015.html |
+| https://github.com/ujamjar/hardcaml |
+| https://github.com/ujamjar/hardcaml-riscv |
+| https://github.com/ujamjar/hardcaml-zinc |
+| https://github.com/ujamjar/hardcaml-bloop |
+| https://github.com/ujamjar/hardcaml-waveterm |
+| https://github.com/ujamjar/hardcaml-llvmsim |
+| https://github.com/ujamjar/hardcaml-vpi |
+
+  </script></section>
+
+</section>
 
