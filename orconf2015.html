@@ -85,6 +85,7 @@ andy.ray@ujamjar.com
 
   <section data-markdown><script type="text/template">
 * Derive new types
+
 ```
 type complex = { re : signal; im : signal }
 
@@ -97,6 +98,7 @@ let complex_multiply a b = {
 
   <section data-markdown><script type="text/template">
 * Higher order functions
+
 ```
 let fir_filter taps enable x = 
   let f (p,v) tap = 
@@ -144,6 +146,7 @@ let fir_filter taps enable x =
 
   <section data-markdown><script type="text/template">
 * Recipes (monad reader issue 7, A Recipe for controlling Lego using Lava)
+
 ```
   let mult a_in b_in = 
     let open State in
@@ -172,7 +175,8 @@ let fir_filter taps enable x =
   </script></section>
 </section>
 
-<section data-markdown><script type="text/template">
+<section>
+  <section data-markdown><script type="text/template">
 # Generate RTL
 
 ```
@@ -180,7 +184,43 @@ let circuit = Circuit.make "toplevel" [ list_of_outputs ]
 let () = Rtl.Verilog.write print_string circuit
 let () = Rtl.Vhdl.write print_string circuit
 ```
-</script></section>
+  </script></section>
+  <section data-markdown><script type="text/template">
+# Caveat
+
+```
+    wire _1214;
+    wire _1208;
+    wire _1210;
+    wire _1216;
+    wire _1218;
+    wire [31:0] _1219;
+
+    assign _1209 = reg_op1 + reg_op2;
+    assign _1207 = reg_op1 - reg_op2;
+    assign _1215 = _1210 ? _1209 : _1207;
+    assign _1172 = reg_op1 == reg_op2;
+    assign _1169 = reg_op1 == reg_op2;
+    assign _1170 = ~ _1169;
+    assign _1178 = _1173 ? _1172 : _1170;
+    assign _1158 = reg_op2[30:0];
+    assign _1159 = reg_op2[31:31];
+    assign _1160 = ~ _1159;
+    assign _1161 = { _1160, _1158 };
+    assign _1162 = reg_op1[30:0];
+    assign _1163 = reg_op1[31:31];
+    assign _1164 = ~ _1163;
+    assign _1165 = { _1164, _1162 };
+    assign _1166 = _1165 < _1161;
+    assign _1167 = ~ _1166;
+    assign _1155 = reg_op1 < reg_op2;
+    assign _1156 = ~ _1155;
+    assign _1176 = _1168 ? _1167 : _1156;
+    assign _1180 = _1179 ? _1178 : _1176;
+    assign _1145 = reg_op2[30:0];
+```
+  </script></section>
+</section>
 
 <section>
   <section data-markdown><script type="text/template">
