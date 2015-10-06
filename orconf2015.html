@@ -83,32 +83,48 @@ andy.ray@ujamjar.com
     </table>
   </section>
 
-  <section data-markdown><script type="text/template">
-* Derive new types
+  <section>
+<h1>Example</h1>
 
-```
-type complex = { re : signal; im : signal }
-
-let complex_multiply a b = {
-  re = (a.re *+ b.re) -: (a.im *+ b.im);
-  im = (a.re *+ b.im) +: (a.im *+ b.re);
-}
-```
-  </script></section>
-
-  <section data-markdown><script type="text/template">
-* Higher order functions
-
-```
-let fir_filter taps enable x = 
-  let f (p,v) tap = 
-    let p = reg r_sync enable p in
-    p, (p *: tap)::v
+<pre><code class="ocaml">
+let fir_filter coefs enable x = 
+  let f d coef =
+    let q = reg r_sync enable d in
+    q, q *+ coef
   in
-  let x = snd @@ List.fold_left f (x, []) taps in
-  tree 2 (reduce (+:) x)
-```
-  </script></section>
+  let g (d,list) coef = 
+    let q, m = f d coef in
+    q, m::list
+  in
+  let _, m = List.fold_left g (x, []) coefs in
+  tree 2 (reduce (+:)) m
+</code></pre>
+  </section>
+
+  <section> 
+<pre><code class="ocaml">
+  let f d coef = 
+    let q = reg r_sync enable d in
+    q, q *+ coef
+</code></pre>
+    <img src="assets/filter1.png">
+  </section>
+  <section> 
+<pre><code class="ocaml">
+  let g (d,list) coef = 
+    let q, m = f d coef in
+    q, m::list
+  in
+  let _, m = List.fold_left g (x, []) coefs in
+</code></pre>
+    <img src="assets/filter2.png">
+  </section>
+  <section> 
+<pre><code class="ocaml">
+  tree 2 (reduce (+:)) m
+</code></pre>
+    <img src="assets/filter3.png">
+  </section>
 
 </section>
 
@@ -394,6 +410,15 @@ HardCaml.Signal.Types.Signal_op
       ({HardCaml.Signal.Types.s_id = 607L; s_names = []; s_width = 1;
         s_deps =
         ...
+```
+
+* Looks like the deep embedding
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+* Write to Verilog
+
+```
 # HardCaml.Rtl.Verilog.write print_string @@ 
     HardCaml.Circuit.make "xadd" 
     [ output "q" (reduce (+:) (List.map (consti 8) [1;2;3;10])) ];;
