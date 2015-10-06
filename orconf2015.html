@@ -136,58 +136,135 @@ let fir_filter coefs enable x =
   </script></section>
 
   <section data-markdown><script type="text/template">
-* Guarded DSL - VHDL processes, Verilog always blocks
-```
-  let () = compile [
-    sm [
-      `wait, [
-        cnt $==. (-1);
-        msel $==. 0;
-        g_when i.miss [
-          msel $==. 1;
-          maddr $== aligned_addr i.addr;
-          caddr $== aligned_addr i.addr;
-          g_if i.rw [
-            (* read - load new cache line *)
-            mreq $==. 1;
-            next `load;
-          ] [
-            (* write *)
-            g_if i.dirty [
-              (* current cache line needs to be flushed *)
-              maddr $== aligned_addr i.evict_addr;
-  ....
+# Guarded DSL 
+
+## VHDL processes, Verilog always blocks
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+
+http://www.asic-world.com/tidbits/verilog_fsm.html
+
+```verilog
+  always @ (posedge clock)
+   case(state)
+     IDLE : 
+       if (req_0 == 1'b1) begin
+         state <= GNT0;
+         gnt_0 <= 1;
+       end else if (req_1 == 1'b1) begin
+         gnt_1 <= 1;
+         state <= GNT1;
+       end else begin
+         state <=  IDLE;
+       end
+     GNT0 : 
+       if (req_0 == 1'b1) begin
+         state <= GNT0;
+       end else begin
+         gnt_0 <= 0;
+         state <= IDLE;
+       end
+     GNT1 : 
+       if (req_1 == 1'b1) begin
+         state <= GNT1;
+       end else begin
+         gnt_1 <= 0;
+         state <= IDLE;
+       end
+     default : state <= IDLE;
+   endcase
+  end
 ```
   </script></section>
 
   <section data-markdown><script type="text/template">
-* Recipes (monad reader issue 7, A Recipe for controlling Lego using Lava)
+```ocaml
+  let () = compile [
+    state `idle;
+    sm [
+      `idle, [
+         g_if req_0 [
+           state `gnt0;
+           gnt_0 $==. 1;
+         ] @@ g_elif req_1 [
+           gnt_1 $==. 1;
+           state `gnt1;
+         ] [
+           state `idle;
+         ]
+       ]
+     `gnt0, 
+       g_if req_0 [
+         state `gnt0;
+       ] [
+         gnt_0 $==. 0;
+         state `idle;
+       ]
+     `gnt1, [
+        g_if req_1 [
+          state `gnt1;
+        ] [
+          gnt_1 $==. 0;
+          state `idle;
+        ]
+      ]
+    ]
+  ]
+```
+  </script></section>
+
+  <section data-markdown><script type="text/template">
+# Recipes 
+
+* monad reader issue 7, A Recipe for controlling Lego using Lava
+* Imperative style programming 
+* OCCAM like par/seq operations
+
+  </script></section>
+  <section data-markdown><script type="text/template">
+Psuedo-code
 
 ```
+par
+  a=a_in; 
+  b=b_in; 
+  acc=0;
+while (b != 0) 
+  par
+    a = a << 1; 
+    b = b >> 1; 
+    acc = b[0] ? (acc + a) acc;
+return acc
+```
+  </script></section>
+  <section data-markdown><script type="text/template">
+Monadic OCaml code
+
+```ocaml
+  let step s = 
+    { a = sll s.a 1; b = srl s.b 1; acc=mux2 (lsb s.b) (s.acc +: s.a) s.acc }
+
   let mult a_in b_in = 
-    let open State in
     perform 
-      (* create registers *)
-      state <-- SState.newVar();
-      (* set inputs and clear accumulator *)
-      SState.apply (fun _ -> { a=a_in; b=b_in; acc=zero 8 }) state;
-      (* serial multiplier *)
+      state <-- newVar();
+      apply (fun _ -> { a=a_in; b=b_in; acc=zero 8 }) state;
       SVar.while_ (fun b -> b <>:. 0) state.b 
-        SState.(apply step state);
-      (* return output *)
+        (apply step state);
       acc <-- SVar.read state.acc;
       return acc
 ```
   </script></section>
+
   <section data-markdown><script type="text/template">
 * Predicting the future...
 * HardCaml-HLS
- * Imperative style DSL
- * Convert to SSA/Basic blocks
- * Binding, Clique Partitioning etc
- * Generate RTL
+  * Imperative style DSL
+  * Convert to SSA/Basic blocks
+  * Binding, Clique Partitioning etc
+  * Generate RTL
 * HardCaml-GAA
- * Guarded Atomic Action DSL
+  * Guarded Atomic Action DSL
   </script></section>
 </section>
 
@@ -318,9 +395,10 @@ let () = testbench ()
 <section data-markdown><script type="text/template">
 # Javascript
 
-* OCaml has an excellent compiler to javascript; [js_of_ocaml](https://github.com/ocsigen/js_of_ocaml)
-* Therefore, HardCaml can be compiled to javascript too.
-* HardCaml web apps can configure, simulate and generate ip cores in the browser.  No server side magic needed.
+* Excellent OCaml to javascript compiler; [js_of_ocaml](https://github.com/ocsigen/js_of_ocaml)
+* HardCaml web apps 
+  * configure, simulate and generate cores 
+  * All in browser 
 * See also the [IOCamlJS](https://github.com/andrewray/iocamljs) based HardCaml [documentation](http://www.ujamjar.com/hardcaml)
 </script></section>
 
@@ -772,6 +850,8 @@ Native code
 $ opam pin add hardcaml-riscv https://github.com/ujamjar/hardcaml-riscv
 $ opam install hardcaml-riscv
 ```
+
+* Coming soon - fusesoc based systems
 </script></section>
 
 <section>
