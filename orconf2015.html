@@ -272,7 +272,7 @@ Monadic OCaml code
   <section data-markdown><script type="text/template">
 # Generate RTL
 
-```
+```ocaml
 let circuit = Circuit.make "toplevel" [ list_of_outputs ]
 let () = Rtl.Verilog.write print_string circuit
 let () = Rtl.Vhdl.write print_string circuit
@@ -281,7 +281,7 @@ let () = Rtl.Vhdl.write print_string circuit
   <section data-markdown><script type="text/template">
 # Caveat
 
-```
+```verilog
     wire _1214;
     wire _1208;
     wire _1210;
@@ -321,7 +321,7 @@ let () = Rtl.Vhdl.write print_string circuit
 
 * Cycle accurate simulation in OCaml
 
-```
+```ocaml
 module Sim = HardCaml.Cyclesim.Make(B)
 let testbench () = 
   let sim = Sim.make circuit in
@@ -340,7 +340,7 @@ let testbench () =
 * Same API 
 * __Much__ faster
 
-```
+```ocaml
 module Sim = HardCamlLlvmsim.Sim.Make(B)
 let () = testbench ()
 ```
@@ -353,7 +353,7 @@ let () = testbench ()
 * Generates Verilog + testbench
 * Interacts with OCaml testbench through a VPI object over sockets
 
-```
+```ocaml
 module Sim = HardCaml.Cosim.Make(B)
 let () = testbench ()
 ```
@@ -419,14 +419,12 @@ let () = testbench ()
   <section data-markdown><script type="text/template">
 # Shallow
 
-```
+```ocaml
         OCaml version 4.02.1
 
 # #use "topfind";;
 # #require "hardcaml";;
 # open HardCaml.Api.B;;
-# (const "01") +: (const "10");;
-- : HardCaml.Api.B.t = [1; 1]
 # reduce (+:) (List.map (consti 8) [1;2;3;10]);;
 - : HardCaml.Api.B.t = [0; 0; 0; 1; 0; 0; 0; 0]
 ```
@@ -435,7 +433,7 @@ let () = testbench ()
   <section data-markdown><script type="text/template">
 # Deep
 
-```
+```ocaml
 # open HardCaml.Api.Comb;;
 # reduce (+:) (List.map (consti 8) [1;2;3;10]);;
 - : HardCaml.Api.Comb.t =
@@ -475,7 +473,7 @@ HardCaml.Signal.Types.Signal_op
 
 * Same code, different functors, very different results.
 
-```
+```ocaml
 # open HardCaml.Xilinx;;
 # module X = HardCaml.Comb.Make( XComb( XMake(Unisim)(Lut4) ) );;
 # open X;;
@@ -496,7 +494,7 @@ HardCaml.Signal.Types.Signal_op
   <section data-markdown><script type="text/template">
 * Write to Verilog
 
-```
+```ocaml
 # HardCaml.Rtl.Verilog.write print_string @@ 
     HardCaml.Circuit.make "xadd" 
     [ output "q" (reduce (+:) (List.map (consti 8) [1;2;3;10])) ];;
@@ -586,20 +584,18 @@ Pretty basic RISC-V processor implemented in HardCaml
  * mask - remove immediates, register specifiers
  * match - check bits relevant to decode
  * f(i,j) = (i & mask<sub>j</sub>) == match<sub>j</sub>
-* trap = !(f(i,0) | f(i,1) | ... | f(i,47))
+* trap = !(f(i,and) | f(i,andi) | ... | f(i,rdcycleh))
   </script></section>
 
   <section data-markdown><script type="text/template">
-```
+```ocaml
 (* trusted implementation *)
 module Ref = struct
   let insn = 
     let x = List.map (fun x -> List.assoc x Riscv.RV32I.T.mask_match) Insn.V.list in
     let open B in
     let f (mask,mat) = (instr &: (consti32 32 mask)) ==: consti32 32 mat in
-    let insn = List.map f x in
-    let trap = ~: (reduce (|:) insn) in
-    B.concat (trap :: List.rev insn)
+    ~: (reduce (|:) (List.map f x)) 
 end
 ```
   </script></section>
@@ -623,24 +619,24 @@ SAT Search and BDD Manipulation,” J. of Universal Computer Sci., vol. 10, no. 
 
 HardCamlBloop Comb API
 
-```
+```ocaml
 module B = HardCamlBloop.Gates.Comb
 ```
 
 RTL version (look, more functors)
 
-```
+```ocaml
 module Rtl = struct
   module I = Decoder.Make_insn_decoder(Ifs)(B)
-  let insn = I.((decoder instr).insn) 
+  let trap = I.((decoder instr).trap) 
 end
 ```
 
 Run the solver
 
-```
-let insn_ok = B.(Rtl.insn <>: Ref.insn)
-let ok = HardCamlBloop.Sat.(report @@ of_signal insn_ok)
+```ocaml
+let trap_ok = B.(Rtl.trap <>: Ref.trap)
+let ok = HardCamlBloop.Sat.(report @@ of_signal trap_ok)
 ```
   </script></section>
 </section>
@@ -846,7 +842,7 @@ Native code
 * When will it be ready?  When its available in OPAM.
 * I want it now!
 
-```
+```bash
 $ opam pin add hardcaml-riscv https://github.com/ujamjar/hardcaml-riscv
 $ opam install hardcaml-riscv
 ```
