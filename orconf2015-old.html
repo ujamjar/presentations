@@ -8,15 +8,15 @@ author: Andy Ray
 <!-- Intro -->
 
 <section data-markdown><script type="text/template">
-# ORCONF 2015
+# OCaml and FPGAs
 
-### I. Writing hardware in OCaml.  
+### ORCONF 2015
 
-### II. Running OCaml in hardware.
+Writing hardware in OCaml.  
 
-__http://www.ujamjar.com/presentations/orconf2015.html__
+Running OCaml in hardware.
 
-[andy.ray@ujamjar.com](mailto://andy.ray@ujamjar.com)
+andy.ray@ujamjar.com
 </script></section>
 
 <section data-markdown><script type="text/template">
@@ -31,21 +31,11 @@ __http://www.ujamjar.com/presentations/orconf2015.html__
 
 <section>
   <section data-markdown><script type="text/template">
-# Part I
-
-## Writing hardware in OCaml
-  </script></section>
-
-  <section data-markdown><script type="text/template">
 # HardCaml
 
-* Embedded domain specific language (EDSL)
 * Structural RTL design.  
-* Generate VHDL or Verilog 
+* RTL generation 
 * Simulation
-<aside class="notes">
-History lesson; HDCaml was released by Tom Hawkins in 2005.  I worked with it quite a bit, then wrote an F# version called HDF#.  HardCaml is a 3rd generation version of the library.  The basic design API remains similar to HDCaml, though a number of implementation details are different.
-</aside>
   </script></section>
 
   <section>
@@ -75,7 +65,7 @@ History lesson; HDCaml was released by Tom Hawkins in 2005.  I worked with it qu
         </tr>
         <tr>
           <td style="text-align:left">mux</td>
-          <td style="text-align:left"><code>mux mux2</code></td>
+          <td style="text-align:left"><code>mux mux2 pmux pmux1h</code></td>
         </tr>
         <tr>
           <td style="text-align:left">bits</td>
@@ -83,7 +73,7 @@ History lesson; HDCaml was released by Tom Hawkins in 2005.  I worked with it qu
         </tr>
         <tr>
           <td style="text-align:left">misc</td>
-          <td style="text-align:left"><code>width wire -- &lt== inst</code></td>
+          <td style="text-align:left"><code>width wire -- &lt==</code></td>
         </tr>
         <tr>
           <td style="text-align:left">sequential</td>
@@ -91,13 +81,6 @@ History lesson; HDCaml was released by Tom Hawkins in 2005.  I worked with it qu
         </tr>
       </tbody>
     </table>
-    <aside class="notes">
-<p>This roughly represents the core of the API, plus a few extra bits.  A bunch of other stuff gets built on top.</p>
-
-<p>Some general rules the API follows; operators end with a colon and where understanding signed-ness is important (multiplication, comparison) the signed variant uses a plus.</p>
-
-<p>Widths are important and strictly enforced by run-time exceptions ie both arguments of an adder must be the same width.</p>
-    </aside>
   </section>
 
   <section>
@@ -116,10 +99,6 @@ let fir_filter coefs enable x =
   let _, m = List.fold_left g (x, []) coefs in
   tree 2 (reduce (+:)) m
 </code></pre>
-
-<aside class="notes">
-The function g is extraneous and would normally be merged with f.  It is split up this way so we can annotate the code with pictures in the following slides.
-</aside>
   </section>
 
   <section> 
@@ -233,17 +212,12 @@ http://www.asic-world.com/tidbits/verilog_fsm.html
     ]
   ]
 ```
-<aside class="notes">
-<p>A couple of differences</p>
-<p>The code is actually a data structure (lists of statements), so can be pulled apart and put together programmatically</p>
-<p>A major difference is 'guarded_vars' are created as a register or wire, rather inferred as one via a sensitivity list.  They live together happily in a single block, and the design also makes accidental latches impossible.</p>
-</aside>
   </script></section>
 
   <section data-markdown><script type="text/template">
 # Recipes 
 
-* Monad reader issue 7, A Recipe for controlling Lego using Lava
+* monad reader issue 7, A Recipe for controlling Lego using Lava
 * Imperative style programming 
 * OCCAM like par/seq operations
 
@@ -252,7 +226,6 @@ http://www.asic-world.com/tidbits/verilog_fsm.html
 Psuedo-code
 
 ```
-serial_multiplier(a_in, b_in)
 par
   a=a_in; 
   b=b_in; 
@@ -264,9 +237,6 @@ while (b != 0)
     acc = b[0] ? (acc + a) acc;
 return acc
 ```
-<aside class="notes">
-The while update loop seems to shift a and b before updating acc.  Surely thats wrong? Nope; in a par block all values are read simulateously (at the start of the clock cycle) then written simultaneously (at the end of the clock cycle).
-</aside>
   </script></section>
   <section data-markdown><script type="text/template">
 Monadic OCaml code
@@ -295,9 +265,6 @@ Monadic OCaml code
   * Generate RTL
 * HardCaml-GAA
   * Guarded Atomic Action DSL
-<aside class="notes">
-No promises for either of these projects.  The HLS tool is closest to working, but probably wont be much use without some significant work on optimisation passes.  GAA would be very nice, but theres very little code written as yet.
-</aside>
   </script></section>
 </section>
 
@@ -309,12 +276,6 @@ No promises for either of these projects.  The HLS tool is closest to working, b
 let circuit = Circuit.make "toplevel" [ list_of_outputs ]
 let () = Rtl.Verilog.write print_string circuit
 let () = Rtl.Vhdl.write print_string circuit
-```
-
-Looking forward to
-
-```ocaml
-let () = Rtl.Firrtl.write print_string circuit
 ```
   </script></section>
   <section data-markdown><script type="text/template">
@@ -351,12 +312,6 @@ let () = Rtl.Firrtl.write print_string circuit
     assign _1180 = _1179 ? _1178 : _1176;
     assign _1145 = reg_op2[30:0];
 ```
-
-Want to avoid debugging this.  But what about timing closure?
-<aside class="notes">
-<p>Use hardcaml hierarchy facilities (interfaces, instances etc)</p>
-<p>Name registers - then we can find register->register timing paths clearly in reports</p>
-</aside>
   </script></section>
 </section>
 
@@ -370,42 +325,33 @@ Want to avoid debugging this.  But what about timing closure?
 module Sim = HardCaml.Cyclesim.Make(B)
 let testbench () = 
   let sim = Sim.make circuit in
-  
   clr := B.vdd;
   S.cycle sim;
-
   clr := B.gnd;
   ena := B.vdd;
   d := B.consti 32 12;
   S.cycle sim;
   printf "%i\n" (B.to_int !q);
-
-  ...
 ```
   </script></section>
   <section data-markdown><script type="text/template">
 # HardCaml-LLVMSIM
 
 * Same API 
-* JIT compile with LLVM
 * __Much__ faster
 
 ```ocaml
 module Sim = HardCamlLlvmsim.Sim.Make(B)
 let () = testbench ()
 ```
-<aside class="notes">
-Some care is taken not to generate one massive LLVM cycle function, as JIT compilation/optimisation does not scale linearly in the size of a function.  Instead it is internally broken up into multiple sub-functions which are compiled independantly.  This means we can handle pretty large circuits efficiently.
-</aside>
   </script></section>
   <section data-markdown><script type="text/template">
 # HardCaml-VPI
 
-* Same API
 * Simulation performed by Icarus Verilog
-* Generates and compiles Verilog + testbench
-* Load vvp simulator
-* Interacts with OCaml testbench over sockets
+* Same API
+* Generates Verilog + testbench
+* Interacts with OCaml testbench through a VPI object over sockets
 
 ```ocaml
 module Sim = HardCaml.Cosim.Make(B)
@@ -442,10 +388,6 @@ let () = testbench ()
 │        ││        ││────────┘       └───────────────────────────────┘         │
 └────────┘└────────┘└──────────────────────────────────────────────────────────┘
 ```
-<aside class="notes">
-<p>HardCaml can also write VCD files for use with ie gtkwave</p>
-<p>It can also run and update gtkwave dynamically using shmidcat</p>
-</aside>
   </script></section>
 
 </section>
@@ -457,242 +399,134 @@ let () = testbench ()
 * HardCaml web apps 
   * configure, simulate and generate cores 
   * All in browser 
-* See also the [IOCamlJS](https://github.com/andrewray/iocamljs) based HardCaml [notebooks](http://www.ujamjar.com/hardcaml)
-  * Write code with HardCaml online, no external requirements.
+* See also the [IOCamlJS](https://github.com/andrewray/iocamljs) based HardCaml [documentation](http://www.ujamjar.com/hardcaml)
 </script></section>
 
 <section>
   <section data-markdown><script type="text/template">
-# Functors
+# Some details
 
-### A ~~car~~ crash course
-  </script></section>
-  <section data-markdown><script type="text/template">
-# Modules
-
-* Group together types, functions, exceptions etc
-* A module can be parameterized by some other module.  
-  * Called a functor
-* In HardCaml we can parameterize over the __type of combinatorial logic__.
-```ocaml
-module Test(B : HardCaml.Comb.S) = struct
-    let test = B.(consti 4 8 +: B.consti 4 2)
-end
-```
-* Then use it with
-```ocaml
-# module Instance = Test(Combinatorial_api);;
-# Instance.test;;
-```
-<aside class="notes">
-<p>This example is deliberately simple; 8+2=10 and we could automatically simplify it</p>
-<p>These same principles would also apply to, say, a RISC-V instruction set decoder...</p>
-</aside>
+* Type representing _combinatorial hardware_ can be shallow or deep
+* Shallow
+  * Hardware represented as values ie int list
+  * Great for exploring combinatorial logic in REPL
+* Deep
+  * Hardware represented as an AST.  
+  * Required for simulation or RTL generation
+* Only deep embedding for sequential logic
   </script></section>
 
   <section data-markdown><script type="text/template">
-# Bits
-
-* Logic as values
-* Shallow embedding
+# Shallow
 
 ```ocaml
-# module Bits = Test(HardCaml.Api.B);;
-# Bits.test;;
-- : HardCaml.Api.bits = [1; 0; 1; 0] 
+        OCaml version 4.02.1
+
+# #use "topfind";;
+# #require "hardcaml";;
+# open HardCaml.Api.B;;
+# reduce (+:) (List.map (consti 8) [1;2;3;10]);;
+- : HardCaml.Api.B.t = [0; 0; 0; 1; 0; 0; 0; 0]
 ```
   </script></section>
 
   <section data-markdown><script type="text/template">
-# Signal
-
-* Logic as abstract syntax tree (AST)
-* Deep embedding
+# Deep
 
 ```ocaml
-# module Signal = Test(HardCaml.Api.Comb);;
-# Signal.test;;
-- : HardCaml.Api.signal =
+# open HardCaml.Api.Comb;;
+# reduce (+:) (List.map (consti 8) [1;2;3;10]);;
+- : HardCaml.Api.Comb.t =
 HardCaml.Signal.Types.Signal_op
- ({HardCaml.Signal.Types.s_id = 39L; s_names = []; s_width = 4;
+ ({HardCaml.Signal.Types.s_id = 43L; s_names = []; s_width = 8;
    s_deps =
-    [HardCaml.Signal.Types.Signal_const
-      ({HardCaml.Signal.Types.s_id = 38L; s_names = []; s_width = 4; s_deps = []}, "1000");
+    [HardCaml.Signal.Types.Signal_op
+      ({HardCaml.Signal.Types.s_id = 42L; s_names = []; s_width = 8;
+        s_deps =
+         [HardCaml.Signal.Types.Signal_op
+           ({HardCaml.Signal.Types.s_id = 41L; s_names = []; s_width = 8;
+             s_deps =
+              [HardCaml.Signal.Types.Signal_const
+                ({HardCaml.Signal.Types.s_id = 37L; s_names = [];
+                  s_width = 8; s_deps = []},
+                "00000001");
+               HardCaml.Signal.Types.Signal_const
+                ({HardCaml.Signal.Types.s_id = 38L; s_names = [];
+                  s_width = 8; s_deps = []},
+                "00000010")]},
+           HardCaml.Signal.Types.Signal_add);
+          HardCaml.Signal.Types.Signal_const
+           ({HardCaml.Signal.Types.s_id = 39L; s_names = []; s_width = 8;
+             s_deps = []},
+           "00000011")]},
+      HardCaml.Signal.Types.Signal_add);
      HardCaml.Signal.Types.Signal_const
-      ({HardCaml.Signal.Types.s_id = 37L; s_names = []; s_width = 4; s_deps = []}, "0010")]},
+      ({HardCaml.Signal.Types.s_id = 40L; s_names = []; s_width = 8;
+        s_deps = []},
+      "00001010")]},
  HardCaml.Signal.Types.Signal_add)
 ```
   </script></section>
 
   <section data-markdown><script type="text/template">
-# Xilinx
+# Xilinx LUTs
 
-* Uses signals, but implements primitives a different way
+* Same code, different functors, very different results.
 
 ```ocaml
 # open HardCaml.Xilinx;;
-# module Xilinx = Test(HardCaml.Comb.Make( XComb( XMake(Unisim)(Lut4) ) ));;
-# Xilinx.test;;
-- : HardCaml.Comb.Make(HardCaml.Xilinx.XComb(HardCaml.Xilinx.XMake(HardCaml.Xilinx.Unisim)(HardCaml.Xilinx.Lut4))).t
-=
+# module X = HardCaml.Comb.Make( XComb( XMake(Unisim)(Lut4) ) );;
+# open X;;
+# reduce (+:) (List.map (consti 8) [1;2;3;10]);;
+- : X.t =
 HardCaml.Signal.Types.Signal_op
- ({HardCaml.Signal.Types.s_id = 92L; s_names = []; s_width = 4;
+ ({HardCaml.Signal.Types.s_id = 610L; s_names = []; s_width = 8;
    s_deps =
     [HardCaml.Signal.Types.Signal_inst
-      ({HardCaml.Signal.Types.s_id = 89L; s_names = []; s_width = 1;
+      ({HardCaml.Signal.Types.s_id = 607L; s_names = []; s_width = 1;
         s_deps =
-         [HardCaml.Signal.Types.Signal_inst
-           ({HardCaml.Signal.Types.s_id = 82L; s_names = []; s_width = 1;
-             s_deps = ...
+        ...
 ```
+
+* Looks like the deep embedding
   </script></section>
+
   <section data-markdown><script type="text/template">
-# Xilinx
+* Write to Verilog
 
-* Look at the RTL
-
-```verilog
+```ocaml
 # HardCaml.Rtl.Verilog.write print_string @@ 
-  HardCaml.Circuit.make "xadd" 
-  [ HardCaml.Api.Comb.output "q" Xilinx.test ];;
-module xadd (
-    q
-);
-
-    output [3:0] q;
-
-    /* signal declarations */
-    wire _62;
-    wire _71;
-    wire _80;
-    wire _85;
-    wire _51;
-    wire _55;
-    wire [1:0] _83;
-    wire _84;
-    wire _87;
-    wire _76;
-    wire _54;
-    wire [1:0] _74;
-    wire _75;
-    wire _78;
-    wire _50;
-    wire _67;
-    wire _53;
-    wire [1:0] _65;
-    wire _66;
-    wire _69;
-    wire _49;
-    wire _58;
-    wire [3:0] _47 = 4'b1000;
-    wire _52;
-    wire [1:0] _56;
-    wire _57;
-    wire _60;
-    wire [3:0] _46 = 4'b0010;
-    wire _48;
-    wire gnd = 1'b0;
-    wire _64;
-    wire _73;
-    wire _82;
-    wire _89;
-    wire [3:0] _92;
-
-    /* logic */
-    XORCY
-        the_XORCY
-        ( .CI(gnd), .LI(_60), .O(_62[0:0]) );
-    XORCY
-        the_XORCY_0
-        ( .CI(_64), .LI(_69), .O(_71[0:0]) );
-    XORCY
-        the_XORCY_1
-        ( .CI(_73), .LI(_78), .O(_80[0:0]) );
-    assign _85 = _83[1:1];
-    assign _51 = _46[3:3];
-    assign _55 = _47[3:3];
-    assign _83 = { _55, _51 };
-    assign _84 = _83[0:0];
+    HardCaml.Circuit.make "xadd" 
+    [ output "q" (reduce (+:) (List.map (consti 8) [1;2;3;10])) ];;
+...
+    assign _810 = _809[0:0];
     LUT2
         #( .INIT("0110") )
-        the_LUT2
-        ( .I0(_84), .I1(_85), .O(_87[0:0]) );
-    assign _76 = _74[1:1];
-    assign _54 = _47[2:2];
-    assign _74 = { _54, _50 };
-    assign _75 = _74[0:0];
-    LUT2
-        #( .INIT("0110") )
-        the_LUT2_0
-        ( .I0(_75), .I1(_76), .O(_78[0:0]) );
-    assign _50 = _46[2:2];
-    assign _67 = _65[1:1];
-    assign _53 = _47[1:1];
-    assign _65 = { _53, _49 };
-    assign _66 = _65[0:0];
-    LUT2
-        #( .INIT("0110") )
-        the_LUT2_1
-        ( .I0(_66), .I1(_67), .O(_69[0:0]) );
-    assign _49 = _46[1:1];
-    assign _58 = _56[1:1];
-    assign _52 = _47[0:0];
-    assign _56 = { _52, _48 };
-    assign _57 = _56[0:0];
-    LUT2
-        #( .INIT("0110") )
-        the_LUT2_2
-        ( .I0(_57), .I1(_58), .O(_60[0:0]) );
-    assign _48 = _46[0:0];
+        the_LUT2_22
+        ( .I0(_810), .I1(_811), .O(_813[0:0]) );
+    assign _793 = _614[0:0];
     MUXCY
-        the_MUXCY
-        ( .CI(gnd), .DI(_48), .S(_60), .O(_64[0:0]) );
-    MUXCY
-        the_MUXCY_0
-        ( .CI(_64), .DI(_49), .S(_69), .O(_73[0:0]) );
-    MUXCY
-        the_MUXCY_1
-        ( .CI(_73), .DI(_50), .S(_78), .O(_82[0:0]) );
-    XORCY
-        the_XORCY_2
-        ( .CI(_82), .LI(_87), .O(_89[0:0]) );
-    assign _92 = { _89, _80, _71, _62 };
-
-    /* aliases */
-
-    /* output assignments */
-    assign q = _92;
-
-endmodule
+        the_MUXCY_13
+        ( .CI(gnd), .DI(_793), .S(_813), .O(_817[0:0]) );
+...
 ```
   </script></section>
 
-  <section data-markdown><script type="text/template">
-# Why?
-
-* One implementation, various interpretations
-  * `Bits, Signals, Xilinx, NAND, NOR, AIG, Gates, Const_prop`
-* `Signals` required for netlist generation and simulation
-* `Bits` are great for debugging/exploring logic in OCaml Toplevel
-<aside class="notes">
-Signals and Bits are key components of the cycle accurate simulator.  A design is first scheduled using analysis of the Signal representation.  This gives an order of operations.  The operations are then performed using the Bits representation.  The testbench uses Bits to interact with the simulation model.
-</aside>
-  </script></section>
 </section>
 
 <!-- HardCaml-RISCV -->
 
-<section>
-  <section data-markdown><script type="text/template">
-# Part II
-
-## Running OCaml in hardware
-  </script></section>
-
-  <section data-markdown><script type="text/template">
+<section data-markdown><script type="text/template">
 # HardCaml-RISCV
 
-* Basic RISC-V processor implemented in HardCaml
+Pretty basic RISC-V processor implemented in HardCaml
+</script></section>
+
+<section>
+
+  <section data-markdown><script type="text/template">
+# Status
+
 * RV32I only
 * Simple 5 stage pipeline
 * Targetted at FPGA technology
@@ -705,11 +539,7 @@ Signals and Bits are key components of the cycle accurate simulator.  A design i
 * RV64I
 * M extension
 * C extension
-* Extended pipeline with branch predictor
-<aside class="notes">
-<p>M will probably implement the basic xlen*xlen primitive and defer the other operations to traps</p>
-<p>Considering a 7 stage pipeline to allow a couple of extra cycles around the caches for Fmax.  Will be a trade off wrt to required pipeline interlocking.</p>
-</aside>
+* Extended pipeline (thinking 7 stage) with branch predictor
   </script></section>
 
   <section data-markdown><script type="text/template">
@@ -718,9 +548,6 @@ Signals and Bits are key components of the cycle accurate simulator.  A design i
 * Virtual memory
 * Supervisor spec
 * Easily configurable instruction set
-<aside class="notes">
-In terms of configurable instructions, I am considering a core generator that takes a collection of specialised instructions and specifications (pipelined, serial etc) and generates appropriate control logic (or score board).
-</aside>
   </script></section>
 
 </section>
@@ -737,27 +564,16 @@ In terms of configurable instructions, I am considering a core generator that ta
   </script></section>
 
   <section data-markdown><script type="text/template">
-# What's SAT?
+# SAT
 
-* Boolean satisfiability problem
-* Find values for `a,b,...` that make `f(a,b,...)=1`
-* SAT; returns the values of `a,b,...`
-* UNSAT; no values of `a,b,...` can ever make f=1
-* FAILED; took too long or ran out of memory
-  </script></section>
-
-  <section data-markdown><script type="text/template">
-# Using SAT
-
-* Question we can ask
-  * Are the functions `f` and `g` equivalent? 
-  * If `f <> g` returns UNSAT, they must be equivalent
-* Which implies
-  * If I __know__ `f` is correct
-  * Then `g` is also correct if equivalent
-<aside class="notes">
-It is interesting to consider what 'f = g' means.  SAT tells us there is at least 1 input pattern that makes f and g match.  It doesnt prove its true of ALL input patterns.
-</aside>
+* We have an implementation we want to test; h(i)
+* We need an implementation we can trust; t(i)
+* Now we need to ask a question.
+ * Are these things the same? h(i) = t(i)
+ * Are these things different? h(i) <> t(i)
+* We ask the 2nd question;
+ * SAT; they are different and we get a bit pattern that causes a problem
+ * UNSAT; they are not different!
   </script></section>
 
   <section data-markdown><script type="text/template">
@@ -767,8 +583,8 @@ It is interesting to consider what 'f = g' means.  SAT tells us there is at leas
 * Parse and convert into mask/match pairs
  * mask - remove immediates, register specifiers
  * match - check bits relevant to decode
- * d(i,j) = (i & mask<sub>j</sub>) == match<sub>j</sub>
-* trap = !(d(i,and) | d(i,andi) | ... | d(i,rdcycleh))
+ * f(i,j) = (i & mask<sub>j</sub>) == match<sub>j</sub>
+* trap = !(f(i,and) | f(i,andi) | ... | f(i,rdcycleh))
   </script></section>
 
   <section data-markdown><script type="text/template">
@@ -790,8 +606,7 @@ end
 * https://www.coursera.org/course/vlsicad
 * PCN, Kmap, CNF, DNF, BDD, SAT
 * Convert HardCaml API to/from various formats
-* Linear expansion from gate netlist to CNF
-  * Gate consistency functions
+* Linear expansion from gates to CNF
 
 ```
 Fadi Aloul, Igor L. Markov, Karem Sakallah, “MINCE: A Static Global Variable-Ordering Heuristic for
@@ -823,11 +638,6 @@ Run the solver
 let trap_ok = B.(Rtl.trap <>: Ref.trap)
 let ok = HardCamlBloop.Sat.(report @@ of_signal trap_ok)
 ```
-
-[~40 loc](https://github.com/ujamjar/hardcaml-riscv/blob/master/test/instr_trap_sat.ml), <<1 sec cpu, happy feelings.
-<aside class="notes">
-The linked implementation checks the trap signal as well as bits representing the decoding of each instruction individually.
-</aside>
   </script></section>
 </section>
 
@@ -879,10 +689,6 @@ http://www.cl.cam.ac.uk/~sd601/papers/multicore_slides.pdf
   * Local minor heaps, stacks
   * Global major heap
 * Bytecode only at the moment
-<aside class="notes">
-<p>Minor heap, stack - high bandwidth, but shouldnt need cache coherence.</p>
-<p>Major heap - lower bandwidth, cache coherent.</p>
-</aside>
   </script></section>
 
 </section>
@@ -897,9 +703,6 @@ http://www.cl.cam.ac.uk/~sd601/papers/multicore_slides.pdf
   * Native code 
     * x86, arm, powerpc, sparc
     * risc-v ...
-<aside class="notes">
-RISC-V support was added as a 2015 GSoC project.  Not yet included with the main ocaml compiler.
-</aside>
   </script></section>
 
   <section data-markdown><script type="text/template">
@@ -916,8 +719,7 @@ RISC-V support was added as a 2015 GSoC project.  Not yet included with the main
   <section data-markdown><script type="text/template">
 # ZINC stack machine
 
-* ZINC - name of the abstract machine OCaml executes on
-* Stack based architecture with a few registers (sp, accu, pc, env, extra_args etc)
+* Stack based architecture with a few registers (sp, accu, pc, extra_args etc)
 
 ```
 loop:
@@ -952,9 +754,6 @@ Native code
 ==30504== Mispredicts: 1,316,445 ( 998,148 cond + 318,297 ind)
 ==30504== Mispred rate: 4.0% ( 3.2% + 16.2% )
 ```
-<aside class="notes">
-It is expected that such a high mis-predict rate is pretty crippling on a deeply pipelined, superscaler, OoO CPU like an x86.
-</aside>
   </script></section>
 
 </section>
@@ -964,7 +763,7 @@ It is expected that such a high mis-predict rate is pretty crippling on a deeply
   <section data-markdown><script type="text/template">
 # Instruction set extension
 
-## Conceptually
+* Conceptually
 
 | 31..24 | 23..6 | 6..0 |
 |:-|:-|:-|
@@ -973,11 +772,10 @@ It is expected that such a high mis-predict rate is pretty crippling on a deeply
 
   <section data-markdown><script type="text/template">
 * Decoded as part of the RISC-V instruction set
-* Basic implementation; jump to 'base + bytecode<<n'
-* Index into (uncached)  tightly coupled memory (or ROM) 
-* Only the bytecode instructions in Icache
-  * branch predictor could be effective.
-* Alot like microcode 
+* Basic implementation; The bytecode is an immediate and the risc-v instructions causes a jump to 'base + bytecode<<n'
+* Indexes into a tightly coupled memory (or ROM) that implements the ocaml bytecode instructions.
+* Only the bytecode instructions in Icache, could effectively use a branch predictor.
+* Sort of like microcode – but these instructions have real addresses so we can still take precise exceptions.
   </script></section>
 
   <section data-markdown><script type="text/template">
@@ -1023,8 +821,8 @@ It is expected that such a high mis-predict rate is pretty crippling on a deeply
 
 * Dynamic loading
 * Compiler-libs
-* Top level (REPL)
-* Bytecode compiler/runtime simpler than native code
+* REPL
+* Bytecode part of OCaml compiler simpler than native code
   </script></section>
 
   <section data-markdown><script type="text/template">
@@ -1040,15 +838,16 @@ It is expected that such a high mis-predict rate is pretty crippling on a deeply
 # License and packaging
 
 * License?  BSD 
-* Code is released using [OPAM](https://opam.ocaml.org), the OCaml package manager
+* Code is released using [OPAM](https://opam.ocaml.org)
 * When will it be ready?  When its available in OPAM.
 * I want it now!
-* ```bash
+
+```bash
 $ opam pin add hardcaml-riscv https://github.com/ujamjar/hardcaml-riscv
 $ opam install hardcaml-riscv
 ```
-* Coming soon - fusesoc based systems
 
+* Coming soon - fusesoc based systems
 </script></section>
 
 <section>
@@ -1056,32 +855,23 @@ $ opam install hardcaml-riscv
   <section data-markdown><script type="text/template">
 # Thanks! Questions?
 
-<small>
+http://www.ujamjar.com/presentations/orconf2015.html
 
-Projects in OPAM
+https://github.com/ujamjar/hardcaml
 
-[hardcaml](https://github.com/ujamjar/hardcaml)[(opam)](http://opam.ocaml.org/packages/hardcaml/hardcaml.1.1.1/)
-[hardcaml-waveterm](https://github.com/ujamjar/hardcaml-waveterm)[(opam)](http://opam.ocaml.org/packages/hardcaml-waveterm/hardcaml-waveterm.0.1.0/)
-[hardcaml-llvmsim](https://github.com/ujamjar/hardcaml-llvmsim)[(opam)](http://opam.ocaml.org/packages/hardcaml-llvmsim/hardcaml-llvmsim.0.2/)
+https://github.com/ujamjar/hardcaml-riscv
 
-[hardcaml-vpi](https://github.com/ujamjar/hardcaml-vpi)[(opam)](http://opam.ocaml.org/packages/hardcaml-vpi/hardcaml-vpi.0.2/)
-[hardcaml-examples](https://github.com/ujamjar/hardcaml-examples)[(opam)](http://opam.ocaml.org/packages/hardcaml-examples/hardcaml-examples.0.2/)
-[hardcaml-reedsolomon](https://github.com/ujamjar/hardcaml-reedsolomon)[(opam)](http://opam.ocaml.org/packages/hardcaml-reedsolomon/hardcaml-reedsolomon.0.2/)
+https://github.com/ujamjar/hardcaml-zinc
 
-Projects in progress
+https://github.com/ujamjar/hardcaml-bloop
 
-[hardcaml-riscv](https://github.com/ujamjar/hardcaml-riscv)
-[hardcaml-zinc](https://github.com/ujamjar/hardcaml-zinc)
-[hardcaml-bloop](https://github.com/ujamjar/hardcaml-bloop)
+https://github.com/ujamjar/hardcaml-waveterm
 
-Other
+https://github.com/ujamjar/hardcaml-llvmsim
 
-[MirageOS](https://mirage.io) 
-[OCaml-TLS](https://github.com/mirleft/ocaml-tls) 
-[FuseSOC](https://github.com/olofk/fusesoc)
-
-</small>
+https://github.com/ujamjar/hardcaml-vpi
 
   </script></section>
 
 </section>
+
